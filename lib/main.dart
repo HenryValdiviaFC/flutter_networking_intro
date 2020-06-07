@@ -1,9 +1,32 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:html';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+
+Future<Api> findTeams(String title) async {
+  
+  final response = await http.get(
+    'https://api-football-v1.p.rapidapi.com/v2/teams/search/'+title,
+    headers: {
+           'x-rapidapi-host': "api-football-v1.p.rapidapi.com",
+           'x-rapidapi-key': "d229813befmsh4c1646ad132a0b5p1313fcjsn9afecaefc97e"
+         },    
+    );
+
+    print('Busqueda - '+response.statusCode.toString());
+
+    if (response.statusCode == 200) {  
+      print("Busqueda - Exito body");
+      print(response.body);
+      return Api.fromJson(json.decode(response.body));
+    }
+  
+    else {
+      throw Exception('Failed to search teams');
+    } 
+ }
+
 
 
 Future<Api> fetchTeams(http.Client client) async {
@@ -118,6 +141,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: appTitle,
       home: MyHomePage(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -140,13 +164,55 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
    
+   Icon visibleIcon = Icon(Icons.search);
+   Widget searchBar= Text('Barra de búsqueda');
+   List<Team> teams;
+
+  @override
+  void initState() {
+    _init();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
     
     return Scaffold(
       appBar: AppBar(
-        title: Text('Demo Networking'),
+        title: searchBar,
+        actions: <Widget>[
+          IconButton(
+            icon: visibleIcon, 
+            onPressed: () {
+              setState(() {
+                
+                if (this.visibleIcon.icon == Icons.search) {
+                  this.visibleIcon = Icon(Icons.cancel);
+                  this.searchBar = TextField(
+                    textInputAction: TextInputAction.search,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20.0,
+                    ),
+                    onSubmitted: (String text){
+                      _search(text);
+                    },
+                  );
+                }
+
+                else{
+                  setState(() {
+                    this.visibleIcon = Icon(Icons.search);
+                    this.searchBar = Text('Barra de búsqueda');
+                  });
+
+                  //Listamos los datos por defecto
+                  //_init();                 
+                }
+              });
+            }
+            )
+        ],
       ),
       body: FutureBuilder<Api>(
         future: fetchTeams(http.Client()),
@@ -154,7 +220,7 @@ class _MyHomePageState extends State<MyHomePage> {
           if (snapshot.hasError) print(snapshot.error);
 
           return snapshot.hasData
-              ? TeamList(teams: snapshot.data.api.teams)
+              ? TeamList(teams: teams)
               : Center(child: CircularProgressIndicator());
         },
       ),
@@ -169,6 +235,23 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  Future _init() async{
+    teams = List();
+    Api apiTemp;
+    apiTemp = await fetchTeams(http.Client());
+    setState(() {
+      teams = apiTemp.api.teams;  
+    });
+    print("Teams size init: "+teams.length.toString());
+  }
+
+  Future _search(String text) async{
+    print("Busqueda init");
+    Api searchTemp = await findTeams(text); 
+    setState(() {
+      teams = searchTemp.api.teams;
+    });
+  }
 }
 
 class TeamList extends StatelessWidget{
