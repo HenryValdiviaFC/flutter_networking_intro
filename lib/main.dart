@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:html';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -190,8 +190,10 @@ class TeamList extends StatelessWidget{
 
   Widget _buildRow(Team team){
     
-    return Padding(
-      padding: EdgeInsets.only(bottom: 15.0),
+    return Card(
+      elevation: 2.0,
+      child: Padding(
+      padding: EdgeInsets.only(bottom: 15.0,top: 15.0),
       child: ListTile(
       leading: Image.network(team.logo),
       title: Text(
@@ -216,7 +218,9 @@ class TeamList extends StatelessWidget{
           ),
         ),
     ),
+    ),
     );
+    
     
 
   }
